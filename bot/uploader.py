@@ -100,7 +100,7 @@ async def upload_file(client, chat_id: int, file_path: str, status_message: Mess
 
         # ✅ Correct usage logging
         try:
-            await log_usage(total_size, "upload")
+            await log_usage("upload", total_size)
             print(f"📊 Logged upload usage: {clean_name} ({total_size / 1024 / 1024:.2f} MB)")
         except Exception as e:
             print(f"⚠️ Failed to log upload usage: {e}")
