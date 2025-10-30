@@ -1,0 +1,17 @@
+pyrogram==2.0.103
+tgcrypto
+pyrofork==2.2.11
+aiohttp[speedups]
+aiofiles
+aioshutil
+aria2p
+flask
+python-dotenv
+pillow
+xattr
+speedtest-cli
+hachoir
+aria2
+speedtest-cli
+motor
+
