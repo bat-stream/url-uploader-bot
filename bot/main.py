@@ -9,6 +9,9 @@ import os
 from bot.handlers import register_callbacks, register_commands, register_url_handler
 from bot.plugins.usage_tracker_command import register_usage_tracker
 from bot.plugins.restart_command import register_restart_command
+from bot.plugins.gdrive_upload_command import register_gdrive_upload
+
+
 
 # Silence Pyrogram logs
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
@@ -20,6 +23,7 @@ app = Client("url_upload_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_T
 register_callbacks(app)
 register_commands(app)
 register_usage_tracker(app)
+register_gdrive_upload(app)
 register_restart_command(app) 
 register_url_handler(app)
 
