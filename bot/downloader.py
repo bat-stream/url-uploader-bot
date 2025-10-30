@@ -63,7 +63,7 @@ async def monitor_download(cancel_code: str, client, aria2, channel_id: int):
 
                 # ✅ Log download bandwidth to MongoDB
                 try:
-                    await log_usage(os.path.getsize(file_path), "download")
+                    await log_usage("download", os.path.getsize(file_path))
                     print(f"📊 Logged download usage for {file_path}")
                 except Exception as e:
                     print(f"⚠️ Failed to log download usage: {e}")
