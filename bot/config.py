@@ -14,7 +14,13 @@ THUMB_URL = os.getenv("THUMB_URL", "https://bat-cave.jkleecher.workers.dev/0:/im
 RENDER_API_KEY = os.getenv("RENDER_API_KEY")
 RENDER_SERVICE_ID = os.getenv("RENDER_SERVICE_ID")
 MONGO_URL = os.getenv("MONGO_URL")
-DB_NAME = os.getenv("DB_NAME", "url_uploader_bot") 
+DB_NAME = os.getenv("DB_NAME", "url_uploader_bot")
+GDRIVE_CLIENT_ID = os.getenv("GDRIVE_CLIENT_ID", "YOUR_CLIENT_ID_HERE")
+GDRIVE_CLIENT_SECRET = os.getenv("GDRIVE_CLIENT_SECRET", "YOUR_CLIENT_SECRET_HERE")
+GDRIVE_REFRESH_TOKEN = os.getenv("GDRIVE_REFRESH_TOKEN", "refresh_tocken")
+GDRIVE_FOLDER_ID = os.getenv("GDRIVE_FOLDER_ID", "Folder_id")
+GDRIVE_INDEX_LINK = os.getenv("GDRIVE_INDEX_LINK", "https://bat-cave.botzzz.workers.dev/1:/")
+GDRIVE_REMOTE_NAME = "Folder1"  # name used for in-memory rclone remote
 
 
 # MongoDB client & collection
