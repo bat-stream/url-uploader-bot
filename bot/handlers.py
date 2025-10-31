@@ -1,6 +1,7 @@
 import re, random, asyncio, aiohttp, socket, time
 import os
 from pyrogram import filters
+import speedtest
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from bot.config import ADMIN_ID, CHANNEL_ID, downloads_path
 from bot.helpers import is_admin, sanitize_filename, get_filename_from_url
@@ -39,81 +40,40 @@ def register_commands(app):
             await message.reply("🚫 Not authorized.")
             return
 
-        status_msg = await message.reply("⏳ Running full speedtest... This may take 30-60 seconds.")
+        status_msg = await message.reply("⏳ Running full speedtest... This may take 30–60 seconds.")
 
-        async def download_speed_test():
-            url = "https://speed.hetzner.de/100MB.bin"
-            start = time.time()
-            downloaded = 0
+        def run_speedtest():
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as resp:
-                        while True:
-                            chunk = await resp.content.read(1024 * 1024)
-                            if not chunk:
-                                break
-                            downloaded += len(chunk)
-            except:
-                return 0
-            elapsed = time.time() - start
-            return (downloaded * 8 / 1_000_000) / max(elapsed, 0.001)
+                st = speedtest.Speedtest()
+                st.get_best_server()
+                download = st.download() / 1_000_000  # convert to Mbps
+                upload = st.upload() / 1_000_000      # convert to Mbps
+                ping = st.results.ping
+                return download, upload, ping
+            except Exception:
+                return 0, 0, None
 
-        async def upload_speed_test():
-            url = "https://httpbin.org/post"
-            data = b"x" * (10 * 1024 * 1024)
-            start = time.time()
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(url, data=data) as resp:
-                        await resp.text()
-            except:
-                return 0
-            elapsed = time.time() - start
-            return (len(data) * 8 / 1_000_000) / max(elapsed, 0.001)
+        loop = asyncio.get_event_loop()
+        download, upload, ping = await loop.run_in_executor(None, run_speedtest)
 
-        async def ping_test(host="8.8.8.8", port=53, timeout=2):
-            start = time.time()
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(timeout)
-                sock.connect((host, port))
-                sock.close()
-            except:
-                return None
-            return int((time.time() - start) * 1000)
-
-        async def get_ip_info():
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get("https://ipinfo.io/json") as resp:
-                        data = await resp.json()
-                        ip = data.get("ip", "Unknown")
-                        org = data.get("org", "Unknown")
-                        city = data.get("city", "")
-                        country = data.get("country", "")
-                        return f"{ip} | {org} | {city}, {country}"
-            except:
-                return "Unknown"
-
+        # Get IP info
         try:
-            download, upload, ping, ip_info = await asyncio.gather(
-                download_speed_test(),
-                upload_speed_test(),
-                ping_test(),
-                get_ip_info()
-            )
-            text = (
-                f"⚡ **Speedtest Results:**\n\n"
-                f"📥 Download: {download:.2f} Mbps\n"
-                f"📤 Upload: {upload:.2f} Mbps\n"
-                f"🏓 Ping: {ping if ping else 'N/A'} ms\n"
-                f"🌐 IP / ISP / Location: {ip_info}"
-            )
-            await safe_edit(status_msg, text)
-        except Exception as e:
-            await safe_edit(status_msg, f"❌ Speedtest failed: {e}")
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://ipinfo.io/json") as resp:
+                    data = await resp.json()
+                    ip_info = f"{data.get('ip','Unknown')} | {data.get('org','Unknown')} | {data.get('city','')}, {data.get('country','')}"
+        except:
+            ip_info = "Unknown"
 
+        text = (
+            f"⚡ **Speedtest Results:**\n\n"
+            f"📥 Download: {download:.2f} Mbps\n"
+            f"📤 Upload: {upload:.2f} Mbps\n"
+            f"🏓 Ping: {ping if ping else 'N/A'} ms\n"
+            f"🌐 IP / ISP / Location: {ip_info}"
+        )
 
+        await safe_edit(status_msg, text)
 
 # ------------------- URL Handler -------------------
 def register_url_handler(app):
