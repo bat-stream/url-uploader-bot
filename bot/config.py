@@ -28,7 +28,7 @@ if not MONGO_URL:
     raise ValueError("❌ Missing MONGO_URL in environment variables")
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
-db = mongo_client[DB_NAME]
+db = mongo_client[MONGO_DB]
 usage_collection = db["usage"]  # ✅ shared usage collection
 
 
