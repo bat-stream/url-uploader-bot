@@ -3,6 +3,7 @@ import re
 import asyncio
 import time
 import subprocess
+from typing import Set
 import shutil
 import tempfile
 from pathlib import Path
@@ -19,6 +20,58 @@ from bot.config import usage_collection
 
 # ---------- default thumb ----------
 DEFAULT_THUMB = download_thumb()
+
+# Allowed characters set (keeps parentheses, square brackets, hyphen, dot, comma)
+ALLOWED_CHARS = set(
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    " ()[]-_.,"  # include space
+)
+
+def clean_filename_allowed(name: str, allowed: set = ALLOWED_CHARS) -> str:
+    """Normalize filename: underscores -> spaces, drop disallowed chars, collapse spaces."""
+    if not name:
+        return name
+    s = name.replace("_", " ")
+    # Replace disallowed characters with a space
+    out = []
+    for ch in s:
+        out.append(ch if ch in allowed else " ")
+    s = "".join(out)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def truncate_filename_keep_ext(name: str, max_len: int = 60) -> str:
+    """
+    Truncate filename WITHOUT adding '...'.
+    Removes trailing punctuation, keeps extension clean.
+    """
+    if not name:
+        return name
+
+    p = Path(name)
+    ext = p.suffix or ""
+    base = p.stem
+
+    # If short enough — return as-is
+    if len(base + ext) <= max_len:
+        return base + ext
+
+    # How many characters we can keep from the base
+    keep = max_len - len(ext)
+    if keep <= 0:
+        # extreme edge-case: return something minimal
+        return ext
+
+    # Cut the base
+    head = base[:keep]
+
+    # Strip unsafe trailing characters
+    head = head.rstrip(" .-_")
+
+    # Return filename without ANY dots added
+    return head + ext
 
 # ---------- language mapping ----------
 LANG_MAP: Dict[str, str] = {
@@ -364,13 +417,20 @@ async def upload_file(client,
 
     # ---------- perform upload ----------
     try:
+        # 1) normalize (remove underscores, collapse spaces, keep parentheses and brackets)
+        normalized = clean_filename_allowed(clean_name)
+
+        # 2) optionally limit length to avoid server-side sanitization for very long names
+        display_name = truncate_filename_keep_ext(normalized, max_len=60)  # tune max_len as you like
+
+        # 3) send using display_name
         with suppress_stdout():
             await client.send_document(
                 chat_id=chat_id,
                 document=upload_path,
                 caption=final_caption,
                 thumb=thumb,
-                file_name=clean_name,
+                file_name=display_name,
                 progress=progress,
                 force_document=True,
                 disable_notification=True
